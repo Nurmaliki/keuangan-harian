@@ -1,0 +1,15 @@
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import { db } from '$lib/db/database';
+  import { setTheme } from '$lib/stores/theme';
+  import { exportJSON, restoreBackup } from '$lib/services/export';
+  let accounts:any[]=[];let categories:any[]=[];let newAccount='';let newCategory='';
+  async function load(){accounts=await db.accounts.toArray();categories=await db.categories.toArray();}
+  async function addAccount(){if(!newAccount.trim())return;await db.accounts.add({id:crypto.randomUUID(),name:newAccount.trim(),type:'other',initialBalance:0,createdAt:new Date().toISOString()});newAccount='';await load();}
+  async function addCategory(){if(!newCategory.trim())return;await db.categories.add({id:crypto.randomUUID(),name:newCategory.trim(),type:'expense',icon:'📌'});newCategory='';await load();}
+  async function restore(e:Event){const file=(e.currentTarget as HTMLInputElement).files?.[0];if(!file)return;if(!confirm('Restore akan mengganti seluruh data lokal saat ini. Lanjutkan?'))return;try{await restoreBackup(file);alert('Restore berhasil.');location.reload();}catch(err){alert((err as Error).message);}}
+  async function wipe(){if(confirm('PERINGATAN: Semua data lokal akan dihapus. Lanjutkan?')){await db.delete();location.reload();}}
+  onMount(load);
+</script>
+<div class="page-title"><div><h1>Pengaturan</h1><div class="muted">Tema, akun, kategori, backup dan restore</div></div></div>
+<div class="grid two-col"><div class="grid"><div class="card"><h3>Tampilan</h3><div class="actions"><button class="secondary" onclick={()=>setTheme('light')}>☀ Light</button><button class="secondary" onclick={()=>setTheme('dark')}>🌙 Dark</button><button class="secondary" onclick={()=>setTheme('system')}>◐ System</button></div></div><div class="card"><h3>Akun / Dompet</h3><div class="actions"><input placeholder="Nama akun baru" bind:value={newAccount}/><button class="primary" onclick={addAccount}>Tambah</button></div><ul>{#each accounts as a}<li>{a.name} <span class="muted">({a.type})</span></li>{/each}</ul></div><div class="card"><h3>Kategori Pengeluaran</h3><div class="actions"><input placeholder="Kategori baru" bind:value={newCategory}/><button class="primary" onclick={addCategory}>Tambah</button></div><ul>{#each categories.filter(c=>c.type==='expense') as c}<li>{c.icon} {c.name}</li>{/each}</ul></div></div><div class="grid"><div class="card"><h3>Backup & Restore</h3><p class="muted">Karena data hanya ada di browser, lakukan backup secara berkala.</p><div class="actions"><button class="primary" onclick={exportJSON}>Download Backup</button><label class="secondary" style="cursor:pointer">Restore Backup<input hidden type="file" accept="application/json" onchange={restore}/></label></div></div><div class="card"><h3>Data Lokal</h3><p class="muted">Menghapus site data/browser storage juga dapat menghapus database aplikasi.</p><button class="danger-btn" onclick={wipe}>Hapus Semua Data</button></div><div class="card"><h3>Keamanan</h3><p class="muted">Versi ini tidak mengirim transaksi ke backend. OCR berjalan di browser. Untuk perangkat bersama, gunakan akun OS/browser terpisah dan kunci perangkat.</p></div></div></div>

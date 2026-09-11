@@ -1,0 +1,27 @@
+{
+  "name": "keuangan-harian-local-first",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-static": "latest",
+    "@sveltejs/kit": "latest",
+    "@sveltejs/vite-plugin-svelte": "latest",
+    "svelte": "latest",
+    "svelte-check": "latest",
+    "typescript": "latest",
+    "vite": "latest"
+  },
+  "dependencies": {
+    "dexie": "latest",
+    "lucide-svelte": "latest",
+    "tesseract.js": "latest",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+  }
+}
