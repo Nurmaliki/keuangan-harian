@@ -17,6 +17,13 @@ class FinanceDB extends Dexie {
       budgets: 'id, categoryId, month',
       settings: 'key'
     });
+    this.version(2).stores({
+      transactions: 'id, type, date, accountId, destinationAccountId, categoryId, merchant, source, createdAt',
+      accounts: 'id, name, type',
+      categories: 'id, name, type',
+      budgets: 'id, categoryId, month, &[categoryId+month]',
+      settings: 'key'
+    });
   }
 }
 

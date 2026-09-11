@@ -33,6 +33,8 @@ export interface Transaction {
   updatedAt: string;
 }
 
+export type TransactionInput = Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>;
+
 export interface Budget {
   id: string;
   categoryId: string;
@@ -43,4 +45,14 @@ export interface Budget {
 export interface AppSetting {
   key: string;
   value: string;
+}
+
+export interface BackupPayload {
+  version: 2;
+  exportedAt: string;
+  transactions: Transaction[];
+  accounts: Account[];
+  categories: Category[];
+  budgets: Budget[];
+  settings: AppSetting[];
 }

@@ -6,6 +6,7 @@
   let summary = { income: 0, expense: 0, balance: 0, count: 0 };
   let latest: any[] = [];
   let categoryRows: {name:string,total:number,pct:number}[] = [];
+  let budgetAlerts: {name:string,spent:number,limit:number,pct:number}[] = [];
 
   async function load() {
     summary = await dashboardSummary();
@@ -16,6 +17,10 @@
     expenses.forEach(x => totals.set(x.categoryId || '', (totals.get(x.categoryId || '') || 0) + x.amount));
     const max = Math.max(...totals.values(),1);
     categoryRows = cats.filter(c => c.type==='expense').map(c => ({name:`${c.icon||''} ${c.name}`, total:totals.get(c.id)||0, pct:((totals.get(c.id)||0)/max)*100})).filter(x=>x.total>0).sort((a,b)=>b.total-a.total).slice(0,6);
+    const month = new Date().toISOString().slice(0, 7);
+    const budgets = await db.budgets.where('month').equals(month).toArray();
+    budgetAlerts = budgets.map((budget) => { const spent = expenses.filter((tx) => tx.categoryId === budget.categoryId && tx.date.slice(0, 7) === month).reduce((sum, tx) => sum + tx.amount, 0); return { name: cats.find((cat) => cat.id === budget.categoryId)?.name || '-', spent, limit: budget.limit, pct: Math.round(spent / budget.limit * 100) }; }).filter((row) => row.pct >= 80).sort((a, b) => b.pct - a.pct);
+    if ('Notification' in window && Notification.permission === 'granted') for (const alert of budgetAlerts) { const key = `budget-alert:${month}:${alert.name}:${alert.pct >= 100 ? 100 : 80}`; if (!localStorage.getItem(key)) { new Notification(`Anggaran ${alert.name}`, { body: `${alert.pct}% anggaran telah terpakai.` }); localStorage.setItem(key, 'sent'); } }
   }
   onMount(load);
 </script>
@@ -27,6 +32,7 @@
   <div class="card"><div class="metric-label">Total Pengeluaran</div><div class="metric danger">{rupiah(summary.expense)}</div></div>
   <div class="card"><div class="metric-label">Jumlah Transaksi</div><div class="metric">{summary.count}</div></div>
 </div>
+{#if budgetAlerts.length}<div class="card budget-alerts"><h3>Peringatan Anggaran</h3>{#each budgetAlerts as alert}<div class="notice" class:danger-notice={alert.pct >= 100}><strong>{alert.name}</strong>: {alert.pct}% terpakai ({rupiah(alert.spent)} dari {rupiah(alert.limit)})</div>{/each}</div>{/if}
 
 <div class="grid two-col" style="margin-top:18px">
   <div class="card">

@@ -1,4 +1,5 @@
 import { db } from '$lib/db/database';
+import type { BackupPayload } from '$lib/db/types';
 
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
@@ -9,9 +10,9 @@ function downloadBlob(blob: Blob, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export async function exportJSON() {
-  const payload = {
-    version: 1,
+export async function createBackupPayload(): Promise<BackupPayload> {
+  return {
+    version: 2,
     exportedAt: new Date().toISOString(),
     transactions: await db.transactions.toArray(),
     accounts: await db.accounts.toArray(),
@@ -19,7 +20,11 @@ export async function exportJSON() {
     budgets: await db.budgets.toArray(),
     settings: await db.settings.toArray()
   };
-  downloadBlob(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }), `backup-keuangan-${Date.now()}.json`);
+}
+
+export async function exportJSON(prefix = 'backup-keuangan') {
+  const payload = await createBackupPayload();
+  downloadBlob(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }), `${prefix}-${Date.now()}.json`);
 }
 
 export async function exportCSV() {
@@ -59,15 +64,25 @@ export async function exportExcel() {
   XLSX.writeFile(wb, `transaksi-${Date.now()}.xlsx`);
 }
 
-export async function restoreBackup(file: File) {
-  const parsed = JSON.parse(await file.text());
-  if (!parsed || parsed.version !== 1) throw new Error('Format backup tidak dikenali.');
+function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null; }
+
+export async function inspectBackup(file: File) {
+  const parsed: unknown = JSON.parse(await file.text());
+  if (!isRecord(parsed) || ![1, 2].includes(Number(parsed.version))) throw new Error('Format backup tidak dikenali.');
+  for (const key of ['transactions', 'accounts', 'categories', 'budgets', 'settings']) if (!Array.isArray(parsed[key])) throw new Error(`Data ${key} pada backup tidak valid.`);
+  const transactions = parsed.transactions as unknown[];
+  if (transactions.some((item) => !isRecord(item) || typeof item.id !== 'string' || !['income', 'expense', 'transfer'].includes(String(item.type)) || !Number.isFinite(Number(item.amount)) || Number(item.amount) <= 0)) throw new Error('Backup berisi transaksi yang tidak valid.');
+  return parsed as unknown as BackupPayload;
+}
+
+export async function restoreBackup(file: File, mode: 'replace' | 'merge' = 'replace') {
+  const parsed = await inspectBackup(file);
   await db.transaction('rw', [db.transactions, db.accounts, db.categories, db.budgets, db.settings], async () => {
-    await Promise.all([db.transactions.clear(), db.accounts.clear(), db.categories.clear(), db.budgets.clear(), db.settings.clear()]);
-    if (parsed.transactions?.length) await db.transactions.bulkAdd(parsed.transactions);
-    if (parsed.accounts?.length) await db.accounts.bulkAdd(parsed.accounts);
-    if (parsed.categories?.length) await db.categories.bulkAdd(parsed.categories);
-    if (parsed.budgets?.length) await db.budgets.bulkAdd(parsed.budgets);
-    if (parsed.settings?.length) await db.settings.bulkAdd(parsed.settings);
+    if (mode === 'replace') await Promise.all([db.transactions.clear(), db.accounts.clear(), db.categories.clear(), db.budgets.clear(), db.settings.clear()]);
+    if (parsed.transactions?.length) await db.transactions.bulkPut(parsed.transactions);
+    if (parsed.accounts?.length) await db.accounts.bulkPut(parsed.accounts);
+    if (parsed.categories?.length) await db.categories.bulkPut(parsed.categories);
+    if (parsed.budgets?.length) await db.budgets.bulkPut(parsed.budgets);
+    if (parsed.settings?.length) await db.settings.bulkPut(parsed.settings);
   });
 }
