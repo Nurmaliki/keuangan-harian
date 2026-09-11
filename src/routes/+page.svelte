@@ -32,8 +32,8 @@
   <div class="card">
     <h3>Transaksi Terbaru</h3>
     {#if latest.length}
-      <div class="table-wrap"><table class="table"><thead><tr><th>Tanggal</th><th>Merchant</th><th>Jenis</th><th>Nominal</th></tr></thead><tbody>
-      {#each latest as tx}<tr><td>{formatDate(tx.date)}</td><td>{tx.merchant || '-'}</td><td><span class="pill">{tx.type}</span></td><td class:danger={tx.type==='expense'} class:good={tx.type==='income'}>{tx.type==='expense' ? '-' : '+'}{rupiah(tx.amount)}</td></tr>{/each}
+      <div class="table-wrap"><table class="table responsive-table"><thead><tr><th>Tanggal</th><th>Merchant</th><th>Jenis</th><th>Nominal</th></tr></thead><tbody>
+      {#each latest as tx}<tr><td data-label="Tanggal">{formatDate(tx.date)}</td><td data-label="Merchant">{tx.merchant || '-'}</td><td data-label="Jenis"><span class="pill">{tx.type}</span></td><td data-label="Nominal" class:danger={tx.type==='expense'} class:good={tx.type==='income'}>{tx.type==='expense' ? '-' : '+'}{rupiah(tx.amount)}</td></tr>{/each}
       </tbody></table></div>
     {:else}<div class="empty">Belum ada transaksi. Tambahkan transaksi pertama Anda.</div>{/if}
   </div>
