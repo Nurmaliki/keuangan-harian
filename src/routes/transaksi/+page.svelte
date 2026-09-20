@@ -16,7 +16,7 @@
   async function remove(id: string) { if (confirm('Hapus transaksi ini?')) { await deleteTransaction(id); await load(); } }
   $: filtered = transactions.filter((tx) => (typeFilter === 'all' || tx.type === typeFilter) && `${tx.merchant || ''} ${tx.notes || ''}`.toLowerCase().includes(query.toLowerCase()));
   $: filteredCategories = categories.filter((category) => category.type === (form.type === 'income' ? 'income' : 'expense'));
-  onMount(() => { load().then(() => { if (new URLSearchParams(location.search).has('new')) openForm(); }); });
+  onMount(() => { load().then(() => { if (new URLSearchParams(location.search).has('new')) openForm(); }); window.addEventListener('finance-data-updated', load); return () => window.removeEventListener('finance-data-updated', load); });
 </script>
 <div class="page-title"><div><h1>Transaksi</h1><div class="muted">Input manual dan kelola seluruh riwayat</div></div><button class="primary" onclick={() => openForm()}><Plus size={18}/> Tambah</button></div>
 <div class="card"><div class="filters"><input placeholder="Cari merchant / catatan..." bind:value={query}/><select bind:value={typeFilter}><option value="all">Semua jenis</option><option value="income">Pemasukan</option><option value="expense">Pengeluaran</option><option value="transfer">Transfer</option></select><a class="secondary" href="/scan">Scan OCR</a></div><div class="table-wrap"><table class="table responsive-table"><thead><tr><th>Tanggal</th><th>Jenis</th><th>Merchant</th><th>Kategori/Tujuan</th><th>Nominal</th><th>Aksi</th></tr></thead><tbody>

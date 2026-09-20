@@ -47,12 +47,28 @@ export interface AppSetting {
   value: string;
 }
 
+export interface RecurringRule {
+  id: string;
+  type: 'income' | 'expense';
+  amount: number;
+  accountId: string;
+  categoryId: string;
+  merchant?: string;
+  notes?: string;
+  nextDate: string;
+  day: number;
+}
+
 export interface BackupPayload {
-  version: 2;
+  version: 1 | 2 | 3 | 4;
   exportedAt: string;
   transactions: Transaction[];
   accounts: Account[];
   categories: Category[];
   budgets: Budget[];
   settings: AppSetting[];
+  recurringRules?: RecurringRule[];
 }
+
+export type BackupTransaction = Omit<Transaction, 'receiptImage'> & { receiptImage?: string };
+export type SerializedBackup = Omit<BackupPayload, 'version' | 'transactions'> & { version: 4; transactions: BackupTransaction[] };

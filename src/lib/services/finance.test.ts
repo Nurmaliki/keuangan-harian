@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { Account, Transaction, TransactionInput } from '$lib/db/types';
-import { calculateAccountBalances, summarizeTransactions, validateTransaction } from './finance';
+import type { Account, Category, Transaction, TransactionInput } from '$lib/db/types';
+import { calculateAccountBalances, summarizeTransactions, validateTransaction, validateTransactionReferences } from './finance';
 
 const base: TransactionInput = { type: 'expense', amount: 25_000, date: '2026-09-11T10:00:00.000Z', accountId: 'cash', categoryId: 'food', source: 'manual' };
 const transaction = (input: Partial<Transaction>): Transaction => ({ ...base, id: crypto.randomUUID(), createdAt: '', updatedAt: '', ...input } as Transaction);
@@ -17,4 +17,10 @@ describe('finance domain', () => {
   });
   it('menolak transfer tanpa akun tujuan', () => { expect(() => validateTransaction({ ...base, type: 'transfer', categoryId: undefined })).toThrow('Akun tujuan'); });
   it('menolak nominal nol', () => { expect(() => validateTransaction({ ...base, amount: 0 })).toThrow('Nominal'); });
+  it('memeriksa akun dan jenis kategori', () => {
+    const accounts: Account[] = [{ id: 'cash', name: 'Cash', type: 'cash', initialBalance: 0, createdAt: '' }];
+    const categories: Category[] = [{ id: 'food', name: 'Food', type: 'income' }];
+    expect(() => validateTransactionReferences(base, accounts, categories)).toThrow('Kategori');
+    expect(() => validateTransactionReferences({ ...base, accountId: 'missing' }, accounts, categories)).toThrow('Akun');
+  });
 });

@@ -22,7 +22,7 @@
     budgetAlerts = budgets.map((budget) => { const spent = expenses.filter((tx) => tx.categoryId === budget.categoryId && tx.date.slice(0, 7) === month).reduce((sum, tx) => sum + tx.amount, 0); return { name: cats.find((cat) => cat.id === budget.categoryId)?.name || '-', spent, limit: budget.limit, pct: Math.round(spent / budget.limit * 100) }; }).filter((row) => row.pct >= 80).sort((a, b) => b.pct - a.pct);
     if ('Notification' in window && Notification.permission === 'granted') for (const alert of budgetAlerts) { const key = `budget-alert:${month}:${alert.name}:${alert.pct >= 100 ? 100 : 80}`; if (!localStorage.getItem(key)) { new Notification(`Anggaran ${alert.name}`, { body: `${alert.pct}% anggaran telah terpakai.` }); localStorage.setItem(key, 'sent'); } }
   }
-  onMount(load);
+  onMount(() => { load(); window.addEventListener('finance-data-updated', load); return () => window.removeEventListener('finance-data-updated', load); });
 </script>
 
 <div class="page-title"><div><h1>Dashboard</h1><div class="muted">Ringkasan kondisi keuangan Anda</div></div></div>

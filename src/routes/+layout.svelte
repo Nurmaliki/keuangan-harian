@@ -4,8 +4,9 @@
   import { onMount } from 'svelte';
   import { initTheme } from '$lib/stores/theme';
   import { seedDatabase } from '$lib/db/database';
+  import { generateDueTransactions } from '$lib/services/recurring';
   let { children } = $props();
-  onMount(async () => { initTheme(); await seedDatabase(); });
+  onMount(async () => { initTheme(); await seedDatabase(); await generateDueTransactions(); window.dispatchEvent(new Event('finance-data-updated')); });
 </script>
 <svelte:head><title>Keuangan Harian</title><meta name="description" content="Aplikasi pencatatan keuangan local-first" /></svelte:head>
 <AppShell>{@render children()}</AppShell>

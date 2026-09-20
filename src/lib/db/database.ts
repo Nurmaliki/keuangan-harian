@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { Account, AppSetting, Budget, Category, Transaction } from './types';
+import type { Account, AppSetting, Budget, Category, RecurringRule, Transaction } from './types';
 
 class FinanceDB extends Dexie {
   transactions!: Table<Transaction, string>;
@@ -7,6 +7,7 @@ class FinanceDB extends Dexie {
   categories!: Table<Category, string>;
   budgets!: Table<Budget, string>;
   settings!: Table<AppSetting, string>;
+  recurringRules!: Table<RecurringRule, string>;
 
   constructor() {
     super('keuangan_harian_db');
@@ -23,6 +24,14 @@ class FinanceDB extends Dexie {
       categories: 'id, name, type',
       budgets: 'id, categoryId, month, &[categoryId+month]',
       settings: 'key'
+    });
+    this.version(3).stores({
+      transactions: 'id, type, date, accountId, destinationAccountId, categoryId, merchant, source, createdAt',
+      accounts: 'id, name, type',
+      categories: 'id, name, type',
+      budgets: 'id, categoryId, month, &[categoryId+month]',
+      settings: 'key',
+      recurringRules: 'id, nextDate'
     });
   }
 }
