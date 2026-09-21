@@ -51,7 +51,11 @@
   </aside>
   <main>
     <header class="topbar">
-      <div><strong>Keuangan Harian</strong><small>Kelola uang dengan lebih cerdas</small></div>
+      <div class="topbar-copy"><strong>Keuangan Harian</strong><small>Kelola uang dengan lebih cerdas</small></div>
+      <a class="mobile-brand" href="/" aria-label="DompetKu, kembali ke dashboard">
+        <span class="brand-mark"><WalletCards size={21}/></span>
+        <span>Dompet<span class="brand-accent">Ku</span></span>
+      </a>
       <a class="primary compact" href="/transaksi?new=1"><Plus size={18}/> Tambah transaksi</a>
     </header>
     {#if !online}<div class="offline-banner">Anda sedang offline — data lokal tetap dapat digunakan.</div>{/if}

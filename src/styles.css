@@ -19,3 +19,11 @@ body{font-size:15px}.shell{grid-template-columns:252px minmax(0,1fr)}
 @media(max-width:950px){.shell{grid-template-columns:80px 1fr}.nav-label,.privacy-note{display:none}.sidebar-foot{align-items:center}.sidebar .brand{padding-inline:0}.brand-mark{flex:0 0 auto}.content{padding:28px 24px}}
 @media(max-width:680px){.content{padding:22px 14px calc(88px + env(safe-area-inset-bottom))}.topbar{padding:0 14px}.topbar .primary{font-size:0}.dashboard-hero{align-items:flex-start;margin-bottom:20px}.dashboard-hero h1{font-size:24px}.dashboard-hero .hero-action{display:none}.cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.metric-card{padding:15px}.metric-top{margin-bottom:14px}.metric-icon{width:36px;height:36px}.metric{font-size:18px}.metric-foot{display:none}.two-col{grid-template-columns:1fr}.panel-heading{padding:18px 16px 14px}.category-row{padding-inline:16px}.dashboard-panel .table-wrap{padding:0 10px 10px}}
 @media(max-width:420px){.dashboard-hero h1{font-size:22px}.cards{grid-template-columns:1fr 1fr}.metric-badge,.trend{display:none}.metric-card .metric-label{font-size:11px}.metric-card .metric{font-size:16px}.panel-heading a{font-size:0}.panel-heading a svg{width:19px;height:19px}}
+
+/* Mobile app branding */
+.mobile-brand{display:none}
+@media(max-width:680px){
+  .topbar-copy{display:none!important}
+  .mobile-brand{display:flex;align-items:center;gap:9px;font-size:18px;font-weight:800;letter-spacing:-.4px}
+  .mobile-brand .brand-mark{width:36px;height:36px}
+}
