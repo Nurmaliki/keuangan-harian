@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { liveQuery } from 'dexie';
   import { db } from '$lib/db/database';
   import type { Category, Transaction } from '$lib/db/types';
   import { summarizeTransactions } from '$lib/services/finance';
@@ -33,7 +34,7 @@
   $: dailyRows = aggregateResult.dailyRows;
   $: maxDaily = Math.max(1, ...dailyRows.flatMap((row) => [row.income, row.expense]));
   $: expenseChange = previous.expense ? ((current.expense - previous.expense) / previous.expense) * 100 : 0;
-  onMount(() => { const load = async () => { [transactions, categories] = await Promise.all([db.transactions.toArray(), db.categories.toArray()]); }; load(); window.addEventListener('finance-data-updated', load); return () => window.removeEventListener('finance-data-updated', load); });
+  onMount(() => { const subscription = liveQuery(() => Promise.all([db.transactions.toArray(), db.categories.toArray()])).subscribe(([newTransactions, newCategories]) => { transactions = newTransactions; categories = newCategories; }); return () => subscription.unsubscribe(); });
 </script>
 <div class="page-title"><div><h1>Laporan & Export</h1><div class="muted">Analisis berdasarkan periode yang Anda pilih</div></div></div>
 <div class="card report-filter"><div class="field"><label for="period">Periode</label><select id="period" bind:value={period}><option value="week">Minggu ini</option><option value="month">Bulan ini</option><option value="year">Tahun ini</option><option value="custom">Rentang tanggal</option></select></div>{#if period === 'custom'}<div class="field"><label for="from">Dari</label><input id="from" type="date" bind:value={from}/></div><div class="field"><label for="to">Sampai</label><input id="to" type="date" bind:value={to}/></div>{/if}</div>

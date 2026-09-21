@@ -1,28 +1,29 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { liveQuery } from 'dexie';
   import { db } from '$lib/db/database';
-  import { dashboardSummary } from '$lib/services/finance';
+  import type { Account, Budget, Category, Transaction } from '$lib/db/types';
+  import { calculateAccountBalances, summarizeTransactions } from '$lib/services/finance';
   import { rupiah, formatDate } from '$lib/utils/format';
   let summary = { income: 0, expense: 0, balance: 0, count: 0 };
   let latest: any[] = [];
   let categoryRows: {name:string,total:number,pct:number}[] = [];
   let budgetAlerts: {name:string,spent:number,limit:number,pct:number}[] = [];
 
-  async function load() {
-    summary = await dashboardSummary();
-    latest = await db.transactions.orderBy('date').reverse().limit(8).toArray();
-    const cats = await db.categories.toArray();
-    const expenses = await db.transactions.where('type').equals('expense').toArray();
+  function updateDashboard(txs: Transaction[], accounts: Account[], cats: Category[], budgets: Budget[]) {
+    const totalsSummary = summarizeTransactions(txs);
+    summary = { income: totalsSummary.income, expense: totalsSummary.expense, balance: [...calculateAccountBalances(accounts, txs).values()].reduce((sum, value) => sum + value, 0), count: txs.length };
+    latest = [...txs].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8);
+    const expenses = txs.filter((tx) => tx.type === 'expense');
     const totals = new Map<string,number>();
     expenses.forEach(x => totals.set(x.categoryId || '', (totals.get(x.categoryId || '') || 0) + x.amount));
     const max = Math.max(...totals.values(),1);
     categoryRows = cats.filter(c => c.type==='expense').map(c => ({name:`${c.icon||''} ${c.name}`, total:totals.get(c.id)||0, pct:((totals.get(c.id)||0)/max)*100})).filter(x=>x.total>0).sort((a,b)=>b.total-a.total).slice(0,6);
     const month = new Date().toISOString().slice(0, 7);
-    const budgets = await db.budgets.where('month').equals(month).toArray();
-    budgetAlerts = budgets.map((budget) => { const spent = expenses.filter((tx) => tx.categoryId === budget.categoryId && tx.date.slice(0, 7) === month).reduce((sum, tx) => sum + tx.amount, 0); return { name: cats.find((cat) => cat.id === budget.categoryId)?.name || '-', spent, limit: budget.limit, pct: Math.round(spent / budget.limit * 100) }; }).filter((row) => row.pct >= 80).sort((a, b) => b.pct - a.pct);
+    budgetAlerts = budgets.filter((budget) => budget.month === month).map((budget) => { const spent = expenses.filter((tx) => tx.categoryId === budget.categoryId && tx.date.slice(0, 7) === month).reduce((sum, tx) => sum + tx.amount, 0); return { name: cats.find((cat) => cat.id === budget.categoryId)?.name || '-', spent, limit: budget.limit, pct: Math.round(spent / budget.limit * 100) }; }).filter((row) => row.pct >= 80).sort((a, b) => b.pct - a.pct);
     if ('Notification' in window && Notification.permission === 'granted') for (const alert of budgetAlerts) { const key = `budget-alert:${month}:${alert.name}:${alert.pct >= 100 ? 100 : 80}`; if (!localStorage.getItem(key)) { new Notification(`Anggaran ${alert.name}`, { body: `${alert.pct}% anggaran telah terpakai.` }); localStorage.setItem(key, 'sent'); } }
   }
-  onMount(() => { load(); window.addEventListener('finance-data-updated', load); return () => window.removeEventListener('finance-data-updated', load); });
+  onMount(() => { const subscription = liveQuery(() => Promise.all([db.transactions.toArray(), db.accounts.toArray(), db.categories.toArray(), db.budgets.toArray()])).subscribe(([txs, accounts, cats, budgets]) => updateDashboard(txs, accounts, cats, budgets)); return () => subscription.unsubscribe(); });
 </script>
 
 <div class="page-title"><div><h1>Dashboard</h1><div class="muted">Ringkasan kondisi keuangan Anda</div></div></div>

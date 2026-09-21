@@ -21,11 +21,31 @@ export async function addRecurringRule(input: Omit<RecurringRule, 'id' | 'day'>)
   return rule;
 }
 
+export async function updateRecurringRule(id: string, input: Omit<RecurringRule, 'id' | 'day'>) {
+  const current = await db.recurringRules.get(id);
+  if (!current) throw new Error('Aturan berulang tidak ditemukan.');
+  const [accounts, categories] = await Promise.all([db.accounts.toArray(), db.categories.toArray()]);
+  validateTransactionReferences({ ...input, date: input.nextDate, source: 'manual' }, accounts, categories);
+  const [year, month, day] = input.nextDate.split('-').map(Number);
+  const checked = new Date(year, month - 1, day);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.nextDate) || checked.getFullYear() !== year || checked.getMonth() !== month - 1 || checked.getDate() !== day) throw new Error('Tanggal mulai tidak valid.');
+  await db.recurringRules.put({ ...input, id, day, paused: current.paused });
+}
+
+export async function skipRecurringOccurrence(id: string) {
+  await db.transaction('rw', db.recurringRules, async () => {
+    const rule = await db.recurringRules.get(id);
+    if (!rule) throw new Error('Aturan berulang tidak ditemukan.');
+    await db.recurringRules.update(id, { nextDate: nextMonthlyDate(rule.nextDate, rule.day) });
+  });
+}
+
 export async function generateDueTransactions(today = new Date()) {
   const localToday = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   await db.transaction('rw', db.recurringRules, db.transactions, async () => {
     const rules = await db.recurringRules.toArray();
     for (const rule of rules) {
+      if (rule.paused) continue;
       let due = rule.nextDate;
       let generated = 0;
       while (due <= localToday && generated < 120) {

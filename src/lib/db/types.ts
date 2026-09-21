@@ -57,6 +57,7 @@ export interface RecurringRule {
   notes?: string;
   nextDate: string;
   day: number;
+  paused?: boolean;
 }
 
 export interface BackupPayload {

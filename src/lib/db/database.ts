@@ -33,6 +33,14 @@ class FinanceDB extends Dexie {
       settings: 'key',
       recurringRules: 'id, nextDate'
     });
+    this.version(4).stores({
+      transactions: 'id, type, date, [date+id], [type+date+id], accountId, destinationAccountId, categoryId, merchant, source, createdAt',
+      accounts: 'id, name, type',
+      categories: 'id, name, type',
+      budgets: 'id, categoryId, month, &[categoryId+month]',
+      settings: 'key',
+      recurringRules: 'id, nextDate'
+    });
   }
 }
 
