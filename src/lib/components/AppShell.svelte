@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Home, ReceiptText, ScanLine, BarChart3, Settings, Plus, Moon, Sun } from 'lucide-svelte';
+  import { Home, ReceiptText, ScanLine, BarChart3, Settings, Plus, Moon, Sun, WalletCards, CloudOff } from 'lucide-svelte';
   import { page } from '$app/stores';
   import { setTheme } from '$lib/stores/theme';
   import { onMount } from 'svelte';
@@ -35,7 +35,8 @@
 
 <div class="shell">
   <aside class="sidebar">
-    <div class="brand">💰 <span>Keuangan Harian</span></div>
+    <div class="brand"><span class="brand-mark"><WalletCards size={21}/></span><span>Dompet<span class="brand-accent">Ku</span></span></div>
+    <div class="nav-label">MENU UTAMA</div>
     <nav>
       {#each menus as item}
         <a class:active={$page.url.pathname === item.href} href={item.href}>
@@ -43,12 +44,15 @@
         </a>
       {/each}
     </nav>
-    <button class="theme-btn" onclick={toggleTheme}><Sun size={18}/><Moon size={18}/><span>Ganti Tema</span></button>
+    <div class="sidebar-foot">
+      <div class="privacy-note"><CloudOff size={17}/><span>Data tersimpan aman<br/>di perangkat Anda</span></div>
+      <button class="theme-btn" onclick={toggleTheme}><Sun size={18}/><Moon size={18}/><span>Ganti Tema</span></button>
+    </div>
   </aside>
   <main>
     <header class="topbar">
-      <div><strong>Keuangan Harian</strong><small>Local-first • data tersimpan di perangkat</small></div>
-      <a class="primary compact" href="/transaksi?new=1"><Plus size={18}/> Tambah</a>
+      <div><strong>Keuangan Harian</strong><small>Kelola uang dengan lebih cerdas</small></div>
+      <a class="primary compact" href="/transaksi?new=1"><Plus size={18}/> Tambah transaksi</a>
     </header>
     {#if !online}<div class="offline-banner">Anda sedang offline — data lokal tetap dapat digunakan.</div>{/if}
     {#if updateReady}<button class="update-banner" onclick={applyUpdate}>Versi baru tersedia. Muat ulang</button>{/if}
